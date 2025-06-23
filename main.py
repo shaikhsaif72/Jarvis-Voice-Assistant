@@ -10,7 +10,7 @@ import os                         # To work with files and folders
 
 recognizer = sr.Recognizer()      # Helps in converting voice to text
 engine = pyttsx3.init()           # Initializes text-to-speech system (pyttsx3)
-newsapi = "0de954be96de426da0877b4ec86973c5"  # API key for getting news from NewsAPI.org
+newsapi = "<Your Key Here>"  # API key for getting news from NewsAPI.org
 
 # This is an old speak function using pyttsx3 (you’re not using this anymore)
 def speak_old(text):
