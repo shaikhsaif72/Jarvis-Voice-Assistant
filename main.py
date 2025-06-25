@@ -10,7 +10,9 @@ import os                         # To work with files and folders
 
 recognizer = sr.Recognizer()      # Helps in converting voice to text
 engine = pyttsx3.init()           # Initializes text-to-speech system (pyttsx3)
-newsapi = "<Your Key Here>"  # API key for getting news from NewsAPI.org
+
+newsapi = "<Your Key Here>"  # API key for getting news from NewsAPI.org          
+
 
 # This is an old speak function using pyttsx3 (you’re not using this anymore)
 def speak_old(text):
@@ -22,29 +24,30 @@ def speak(text):
     tts = gTTS(text)             # Converts the text to an mp3 file using Google’s TTS
     tts.save('temp.mp3')         # Saves the spoken output as a file
 
-    pygame.mixer.init()          # Start Pygame’s audio system
+    pygame.mixer.init()                   # Start Pygame’s audio system
     pygame.mixer.music.load('temp.mp3')   # Load that mp3 file
-    pygame.mixer.music.play()    # Play the file
+    pygame.mixer.music.play()             # Play the file
 
     # Wait here until the file finishes playing
     while pygame.mixer.music.get_busy():
         pygame.time.Clock().tick(10)
 
-    pygame.mixer.music.unload()  # Free up resources
+    pygame.mixer.music.unload()  # Free up resources    
     os.remove("temp.mp3")        # Delete the mp3 file after playing
 
 # This function sends your command to OpenAI (ChatGPT) and gets a reply
 def aiProcess(command):
-    client = OpenAI(api_key="<Your Key Here>")
-
+    client = OpenAI(api_key="<Your Key Here>")      # You must replace <Your Key Here> with your real OpenAI API key (paid)
+                                                    # 🔔 NOTE: You have to buy a subscription from OpenAI to use their API now
+                                                    # Free access is no longer available, Without a paid API key, the chatbot part of this project will NOT work.
     completion = client.chat.completions.create(
-        model="gpt-3.5-turbo",
+        model="gpt-3.5-turbo",         # Make sure this model is supported under your paid plan
         messages=[
             {"role": "system", "content": "You are a virtual assistant named jarvis skilled in general tasks like Alexa and Google Cloud. Give short responses please"},
             {"role": "user", "content": command}
         ]
     )
-    return completion.choices[0].message.content  # Returns ChatGPT’s response text
+    return completion.choices[0].message.content    # Returns ChatGPT’s response text
 
 # This function handles the tasks based on your spoken command
 def processCommand(c):
@@ -60,12 +63,12 @@ def processCommand(c):
     elif "open linkedin" in c.lower():
         webbrowser.open("https://linkedin.com")
 
-    elif c.lower().startswith("play"):  # Example: "play despacito"
+    elif c.lower().startswith("play"):    # Example: "play despacito"
         song = c.lower().split(" ")[1]    # Gets the second word (the song name)
         link = musicLibrary.music[song]   # Finds the link from your music library
         webbrowser.open(link)             # Opens that link in the browser to play
 
-    elif "news" in c.lower():  # If you say "news", it reads the top headlines
+    elif "news" in c.lower():        # If you say "news", it reads the top headlines
         r = requests.get(f"https://newsapi.org/v2/top-headlines?country=us&apiKey={newsapi}")
         if r.status_code == 200:
             data = r.json()
@@ -104,13 +107,3 @@ if __name__ == "__main__":
         except Exception as e:  # If something goes wrong (like not understanding), print the error
             print("Error; {0}".format(e))
 
-
-'''📝 Summary of Main Points 
-Part	                                    What It Does
-speak()	                    Makes Jarvis speak out loud using gTTS + pygame
-aiProcess()	                Sends commands to ChatGPT and gets a reply
-processCommand()	        Opens Google, Facebook, plays music, reads news, or asks ChatGPT
-while True:	                Keeps listening for you to say “Jarvis”
-"Jarvis Active..."	        After you say “Jarvis”, it listens to your command
-except	                    Handles errors if speech is not clear
-'''
