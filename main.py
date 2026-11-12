@@ -1,16 +1,7 @@
 
-import importlib
+import speech_recognition as sr
 import webbrowser
 import time
-
-
-try:
-    sr = importlib.import_module("speech_recognition")
-except ModuleNotFoundError as error:
-    raise ModuleNotFoundError(
-        "The SpeechRecognition package is required. "
-        "Install it with: pip install SpeechRecognition"
-    ) from error
 
 from services.ai import ask_ai
 from services.voice import speak
