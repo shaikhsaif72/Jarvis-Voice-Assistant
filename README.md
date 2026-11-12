@@ -1,168 +1,251 @@
-# Jarvis - Voice-Activated Virtual Assistant
+# Jarvis Voice Assistant 🎙️🤖
 
-Jarvis is a voice-activated virtual assistant designed to perform tasks such as opening websites, playing music, fetching news, and responding to user queries using OpenAI's GPT-3.5-turbo model. It listens for the **wake word "Jarvis"** and executes your commands, acting like a simplified version of Alexa or Google Assistant.
+An AI-powered desktop voice assistant built with Python that can understand voice commands, answer questions using Google's Gemini AI, fetch live information, and perform basic Windows system operations.
+
+Jarvis is designed to make everyday desktop interactions easier through voice-controlled automation and AI-powered assistance.
+
+## ✨ Features
+
+### 🎙️ Voice Interaction
+- Speech recognition using SpeechRecognition.
+- Text-to-speech responses using pyttsx3.
+- Wake-word activation using "Jarvis".
+- Continuous voice listening.
+- Support for Indian English (`en-IN`).
+- Microphone calibration for better recognition.
+
+### 🤖 AI-Powered Conversations
+- Google Gemini API integration.
+- Answers general questions and performs basic conversational tasks.
+- Short, voice-friendly AI responses.
+- Error handling for API failures and unavailable services.
+
+### 🌐 Web & Information Services
+- Open popular websites:
+  - Google
+  - YouTube
+  - Facebook
+  - LinkedIn
+  - GitHub
+  - Instagram
+- Google search through voice commands.
+- Wikipedia search and summaries.
+- Latest Indian news headlines using NewsData.io.
+- Real-time weather information using Open-Meteo.
+
+### 🎵 Music Search
+- Search songs directly on YouTube using voice commands.
+- No manually maintained song URL list required.
+
+### 💻 Windows System Automation
+- Get current time and date.
+- Check battery percentage and charging status.
+- Open applications:
+  - Google Chrome
+  - Visual Studio Code
+  - Notepad
+  - Calculator
+- Close supported applications using Windows process management.
+- Lock the computer through voice commands.
+- Safely exit the Jarvis assistant.
+
+### 🔐 Security
+- API keys stored in environment variables.
+- `.env` excluded from Git using `.gitignore`.
+- `.env.example` provided for configuration reference.
 
 ---
 
-## Features
+## 🛠️ Tech Stack
 
-* **Voice Recognition:** Converts spoken words into text using the `speech_recognition` library.
-* **Wake Word Detection:** Activates upon detecting the wake word "Jarvis."
-* **Text-to-Speech:**
-
-  * Converts text to speech using `pyttsx3` for local conversion.
-  * Uses `gTTS` (Google Text-to-Speech) and `pygame` for audio playback.
-* **Web Browsing:** Opens websites like Google, Facebook, YouTube, and LinkedIn via voice commands.
-* **Music Playback:** Interfaces with a `musicLibrary` module to play songs via web links.
-* **News Fetching:** Fetches and reads the latest headlines using NewsAPI.
-* **OpenAI Integration:** Handles complex queries and generates responses using OpenAI's GPT-3.5-turbo.
+| Technology | Purpose |
+|---|---|
+| Python | Core programming language |
+| SpeechRecognition | Voice input and speech recognition |
+| PyAudio | Microphone input |
+| pyttsx3 | Text-to-speech |
+| Google Gemini API | AI-powered responses |
+| Requests | API communication |
+| NewsData.io | Latest news |
+| Open-Meteo | Weather information |
+| Wikipedia | Knowledge search |
+| Webbrowser | Website and YouTube search |
+| psutil | Battery information |
+| Windows subprocess | Application management |
+| python-dotenv | Environment variable management |
 
 ---
 
-## Project Structure
+## 📁 Project Structure
 
+```text
+Jarvis-Voice-Assistant/
+│
+├── main.py
+├── config.py
+├── musicLibrary.py
+│
+├── services/
+│   ├── ai.py
+│   ├── voice.py
+│   ├── weather.py
+│   ├── news.py
+│   ├── search.py
+│   ├── wiki.py
+│   └── music.py
+│   └── system.py
+│
+├── .env
+├── .env.example
+├── .gitignore
+├── requirements.txt
+├── LICENSE
+└── README.md
 ```
-├── main.py           # Main program file (Jarvis logic)
-├── musicLibrary.py   # Dictionary of song names and their links
-├── client.py         # Sample script to test OpenAI responses independently
-├── README.md         # This file
-```
+
+*Note: `musicLibrary.py` is part of the existing repository and is currently not used by the YouTube music search service.*
 
 ---
 
-## Requirements
+## ⚙️ Installation & Setup
 
-* Python 3.8 or higher recommended
-
-Install required Python packages before running:
+### 1. Clone the Repository
 
 ```bash
-pip install speechrecognition
-pip install pyttsx3
-pip install gTTS
-pip install pygame
-pip install requests
-pip install openai
-pip install setuptools
-pip install pocketsphinx
+git clone https://github.com/shaikhsaif72/Jarvis-Voice-Assistant.git
 ```
 
----
+### 2. Navigate to the Project Directory
 
-## Setup Instructions
-
-1. Clone or download the project folder.
-2. Add your favorite songs in `musicLibrary.py`:
-
-```python
-music = {
-    "despacito": "https://www.youtube.com/watch?v=kJQP7kiw5Fk",
-    "faded": "https://www.youtube.com/watch?v=60ItHLz5WEA"
-}
+```bash
+cd Jarvis-Voice-Assistant
 ```
 
-3. Add your API keys:
+### 3. Create a Virtual Environment (Recommended)
 
-   * OpenAI API Key: Replace `<Your Key Here>` in `aiProcess()` in `main.py` with your key.
-   * NewsAPI API Key: Already added, or you can replace it with your own for reliability.
+```bash
+python -m venv .venv
+```
 
-4. Run the program:
+Activate it on Windows:
+
+```bash
+.venv\Scripts\activate
+```
+
+### 4. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+**Note:** PyAudio may require additional setup depending on your Windows and Python environment.
+
+### 5. Configure Environment Variables
+
+Create a `.env` file in the root directory.
+
+Add the following:
+
+```env
+AI_API_KEY=your_gemini_api_key
+NEWS_API_KEY=your_newsdata_api_key
+```
+
+Get your API keys:
+
+- Gemini API: https://aistudio.google.com/
+- NewsData.io: https://newsdata.io/
+
+Weather functionality uses Open-Meteo and does not require an API key.
+
+**Important:** Never upload your `.env` file or expose your API keys publicly.
+
+### 6. Run Jarvis
 
 ```bash
 python main.py
 ```
 
-5. Say "Jarvis" → Wait for the reply → Give your command.
+---
 
-**Troubleshooting Tip:** If speech recognition doesn’t work, ensure your microphone is properly connected and accessible.
+## 🗣️ Voice Commands
+
+| Category | Example Commands |
+|---|---|
+| Wake Word | "Jarvis" |
+| AI Assistant | "Jarvis, explain machine learning" |
+| Website | "Jarvis, open YouTube" |
+| Google Search | "Jarvis, search Python tutorials" |
+| Wikipedia | "Jarvis, search Wikipedia for artificial intelligence" |
+| Weather | "Jarvis, what's the weather in Mumbai?" |
+| News | "Jarvis, tell me the latest news" |
+| Music | "Jarvis, play Tum Hi Ho" |
+| Time | "Jarvis, what time is it?" |
+| Date | "Jarvis, what's today's date?" |
+| Battery | "Jarvis, check battery status" |
+| Open Application | "Jarvis, open calculator" |
+| Close Application | "Jarvis, close notepad" |
+| Lock Computer | "Jarvis, lock my computer" |
+| Exit Assistant | "Jarvis, shutdown" |
+
+Commands can also be recognized without the wake word in supported fallback scenarios.
 
 ---
 
-## Workflow Summary
+## 🧠 Project Architecture
 
-1. Initialization → Greets the user with "Initializing Jarvis..."
-2. Wake Word Detection → Listens for "Jarvis"
-3. Acknowledges activation by saying "Ya."
-4. Command Processing → Executes tasks like opening websites, playing music, fetching news, or using OpenAI for responses
-5. Speech Output → Provides spoken responses using `gTTS` or `pyttsx3`
+The project uses a modular service-based approach.
 
----
+- `main.py` – Main execution loop, wake-word detection and command routing.
+- `config.py` – Loads environment variables and API configuration.
+- `services/ai.py` – Gemini AI integration.
+- `services/voice.py` – Text-to-speech functionality.
+- `services/weather.py` – Weather data retrieval.
+- `services/news.py` – Latest news retrieval.
+- `services/search.py` – Google search functionality.
+- `services/wiki.py` – Wikipedia integration.
+- `services/music.py` – YouTube music search.
+- `services/system.py` – Windows system operations.
 
-## Testing OpenAI API (Optional)
-
-A separate script `client.py` is included to test OpenAI's API functionality independently.
-
-Example usage:
-
-```python
-from openai import OpenAI
-
-client = OpenAI(api_key="YOUR_API_KEY")
-
-completion = client.chat.completions.create(
-    model="gpt-3.5-turbo",
-    messages=[
-        {"role": "system", "content": "You are a virtual assistant named jarvis."},
-        {"role": "user", "content": "What is coding?"}
-    ]
-)
-
-print(completion.choices[0].message.content)
-```
-
-Run it with:
-
-```bash
-python client.py
-```
+This separation makes the project easier to maintain and extend.
 
 ---
 
-## Examples of Commands
+## 🚀 Development Roadmap
 
-| Say This                       | What Jarvis Does                      |
-| ------------------------------ | ------------------------------------- |
-| `Jarvis` → `Open Google`       | Opens google.com in browser           |
-| `Jarvis` → `Play faded`        | Plays the YouTube link of "faded"     |
-| `Jarvis` → `News`              | Reads out latest headlines (US news)  |
-| `Jarvis` → `Who is Elon Musk?` | Gets the answer from OpenAI (ChatGPT) |
-| `Jarvis` → `What time is it?`  | Tells the current time                |
-| `Jarvis` → `Tell me a joke`    | Responds with a joke from OpenAI      |
+The project will be upgraded in three development phases.
 
----
+### Phase 1 – Core Assistant Expansion
+- Fix command fallback and improve command detection.
+- Integrate calendar functionality.
+- Add more Windows system controls.
+- Expand application control.
 
-## To Do / Improvements
+### Phase 2 – Smart Assistant
+- File and folder management.
+- Improve AI architecture.
+- Add conversational memory and context.
+- Implement logging and activity tracking.
 
-* Add error handling for unknown songs
-* Add offline speech recognition support
-* Implement additional commands (e.g., send email, set reminders, control system volume)
-* Create a GUI interface (Tkinter/PyQt)
-* Package as `.exe` for Windows using `pyinstaller`
-
----
-
-## Libraries Used
-
-* speech\_recognition
-* webbrowser
-* pyttsx3
-* musicLibrary (custom)
-* requests
-* openai
-* gTTS
-* pygame
-* os
-* setuptools
-* pocketsphinx
+### Phase 3 – Production & Portfolio Polish
+- Centralized configuration management.
+- Robust error handling and offline resilience.
+- Improved project architecture.
+- Professional documentation, screenshots, demo and GitHub presentation.
 
 ---
 
-## Author
+## 🎯 Project Goal
 
-Made by **Saif Shaikh** as part of a learning project inspired by CodeWithHarry's Python tutorials.
+The goal is to evolve Jarvis from a basic Python voice assistant into a modular, AI-powered desktop automation system with intelligent conversations, real-time information retrieval and practical Windows system control.
+
+## 👨‍💻 Author
+
+**Saif Shaikh**
+
+- GitHub: https://github.com/shaikhsaif72
 
 ---
 
-## License
-
-This project is free to use for personal and educational purposes. For commercial use, please contact the author.
+⭐ If you find this project interesting, consider giving it a star!
