@@ -1,109 +1,876 @@
-import speech_recognition as sr   # Used to listen to your voice and convert it into text
-import webbrowser                 # To open websites in your browser
-import pyttsx3                    # To convert text into speech (computer talks)
-import musicLibrary               # Your custom music library (You must create or define this module)
-import requests                   # To send requests to websites (used here to get news)
-from openai import OpenAI         # To connect with OpenAI API (for ChatGPT responses)
-from gtts import gTTS             # Google’s Text-to-Speech for better voice output
-import pygame                     # To play audio files
-import os                         # To work with files and folders
 
-recognizer = sr.Recognizer()      # Helps in converting voice to text
-engine = pyttsx3.init()           # Initializes text-to-speech system (pyttsx3)
+import speech_recognition as sr
+import webbrowser
+import time
 
-newsapi = "<Your Key Here>"  # API key for getting news from NewsAPI.org          
+from services.ai import ask_ai
+from services.voice import speak
+from services.weather import get_weather
+from services.news import get_news
+from services.search import web_search
+from services.wiki import wikipedia_search
+from services.music import play_music
+from services.system import (
+    get_time,
+    get_date,
+    get_battery,
+    open_application,
+    close_application,
+    lock_computer
+)
 
 
-# This is an old speak function using pyttsx3 (you’re not using this anymore)
-def speak_old(text):
-    engine.say(text)
-    engine.runAndWait()
+# =========================
+# VOICE RECOGNITION CONFIG
+# =========================
 
-# New speak function → uses gTTS and pygame to speak
-def speak(text):
-    tts = gTTS(text)             # Converts the text to an mp3 file using Google’s TTS
-    tts.save('temp.mp3')         # Saves the spoken output as a file
+recognizer = sr.Recognizer()
 
-    pygame.mixer.init()                   # Start Pygame’s audio system
-    pygame.mixer.music.load('temp.mp3')   # Load that mp3 file
-    pygame.mixer.music.play()             # Play the file
+recognizer.energy_threshold = 300
+recognizer.dynamic_energy_threshold = True
+recognizer.pause_threshold = 0.8
+recognizer.phrase_threshold = 0.3
+recognizer.non_speaking_duration = 0.5
 
-    # Wait here until the file finishes playing
-    while pygame.mixer.music.get_busy():
-        pygame.time.Clock().tick(10)
 
-    pygame.mixer.music.unload()  # Free up resources    
-    os.remove("temp.mp3")        # Delete the mp3 file after playing
+# =========================
+# SPEECH RECOGNITION
+# =========================
 
-# This function sends your command to OpenAI (ChatGPT) and gets a reply
-def aiProcess(command):
-    client = OpenAI(api_key="<Your Key Here>")      # You must replace <Your Key Here> with your real OpenAI API key (paid)
-                                                    # 🔔 NOTE: You have to buy a subscription from OpenAI to use their API now
-                                                    # Free access is no longer available, Without a paid API key, the chatbot part of this project will NOT work.
-    completion = client.chat.completions.create(
-        model="gpt-3.5-turbo",         # Make sure this model is supported under your paid plan
-        messages=[
-            {"role": "system", "content": "You are a virtual assistant named jarvis skilled in general tasks like Alexa and Google Cloud. Give short responses please"},
-            {"role": "user", "content": command}
-        ]
+def listen():
+    """Listen to the user's command and convert speech to text."""
+
+    try:
+
+        with sr.Microphone() as source:
+
+            print("Listening...")
+
+            audio = recognizer.listen(
+                source,
+                timeout=5,
+                phrase_time_limit=8
+            )
+
+        command = recognizer.recognize_google(
+            audio,
+            language="en-IN"
+        )
+
+        command = command.lower().strip()
+
+        print(f"You: {command}")
+
+        return command
+
+    except sr.WaitTimeoutError:
+
+        print("Listening timeout.")
+        return ""
+
+    except sr.UnknownValueError:
+
+        print("Could not understand speech.")
+        return ""
+
+    except sr.RequestError:
+
+        print("Speech recognition service unavailable.")
+        return ""
+
+    except Exception as e:
+
+        print(f"Listening Error: {e}")
+        return ""
+
+
+# =========================
+# WEBSITE COMMANDS
+# =========================
+
+def open_website(command):
+
+    websites = {
+        "google": "https://google.com",
+        "youtube": "https://youtube.com",
+        "facebook": "https://facebook.com",
+        "linkedin": "https://linkedin.com",
+        "github": "https://github.com",
+        "instagram": "https://instagram.com"
+    }
+
+    for name, url in websites.items():
+
+        if f"open {name}" in command:
+
+            webbrowser.open(url)
+
+            speak(f"Opening {name}")
+
+            return True
+
+    return False
+
+
+# =========================
+# SYSTEM COMMANDS
+# =========================
+
+def system_command(command):
+
+    # =========================
+    # TIME
+    # =========================
+
+    time_keywords = [
+        "what time is it",
+        "what is time",
+        "what time it is",
+        "what's the time",
+        "current time",
+        "tell me the time",
+        "time"
+    ]
+
+    if any(
+        keyword in command
+        for keyword in time_keywords
+    ):
+
+        result = get_time()
+
+        speak(result)
+
+        return True
+
+
+    # =========================
+    # DATE
+    # =========================
+
+    date_keywords = [
+        "what is today's date",
+        "what's today's date",
+        "today's date",
+        "what date is it",
+        "tell me today's date",
+        "today date",
+        "today"
+    ]
+
+    if any(
+        keyword in command
+        for keyword in date_keywords
+    ):
+
+        result = get_date()
+
+        speak(result)
+
+        return True
+
+
+    # =========================
+    # BATTERY
+    # =========================
+
+    battery_keywords = [
+        "battery",
+        "battery level",
+        "battery percentage",
+        "how much battery",
+        "how much charge",
+        "battery status"
+    ]
+
+    if any(
+        keyword in command
+        for keyword in battery_keywords
+    ):
+
+        result = get_battery()
+
+        speak(result)
+
+        return True
+
+
+    # =========================
+    # OPEN APPLICATIONS
+    # =========================
+
+    applications = {
+        "chrome": "chrome",
+        "vs code": "vs code",
+        "vscode": "vscode",
+        "notepad": "notepad",
+        "calculator": "calculator"
+    }
+
+    for name, app in applications.items():
+
+        if (
+            f"open {name}" in command
+            or f"launch {name}" in command
+            or f"start {name}" in command
+        ):
+
+            print(
+                f"Opening application: {app}"
+            )
+
+            success = open_application(app)
+
+            if success:
+
+                speak(
+                    f"Opening {name}"
+                )
+
+            else:
+
+                speak(
+                    f"I couldn't open {name}"
+                )
+
+            return True
+
+
+    # =========================
+    # CLOSE APPLICATIONS
+    # =========================
+
+    close_applications = {
+        "chrome": "chrome",
+        "vs code": "vs code",
+        "vscode": "vscode",
+        "notepad": "notepad",
+        "calculator": "calculator"
+    }
+
+    for name, app in close_applications.items():
+
+        if (
+            f"close {name}" in command
+            or f"exit {name}" in command
+            or f"quit {name}" in command
+            or f"terminate {name}" in command
+        ):
+
+            print(
+                f"Closing application: {app}"
+            )
+
+            success = close_application(app)
+
+            if success:
+
+                speak(
+                    f"Closing {name}"
+                )
+
+            else:
+
+                speak(
+                    f"{name} is not running."
+                )
+
+            return True
+
+
+    # =========================
+    # LOCK COMPUTER
+    # =========================
+
+    lock_keywords = [
+        "lock my computer",
+        "lock computer",
+        "lock my pc",
+        "lock pc"
+    ]
+
+    if any(
+        keyword in command
+        for keyword in lock_keywords
+    ):
+
+        speak(
+            "Locking your computer."
+        )
+
+        success = lock_computer()
+
+        if not success:
+
+            speak(
+                "I couldn't lock your computer."
+            )
+
+        return True
+
+
+    return False
+
+
+# =========================
+# WEATHER COMMAND
+# =========================
+
+def weather_command(command):
+
+    if "weather" not in command:
+
+        return False
+
+    city = "Mumbai"
+
+    words = command.split()
+
+    if "in" in words:
+
+        index = words.index("in")
+
+        if index + 1 < len(words):
+
+            city = " ".join(
+                words[index + 1:]
+            )
+
+    print(
+        f"Getting weather for {city}..."
     )
-    return completion.choices[0].message.content    # Returns ChatGPT’s response text
 
-# This function handles the tasks based on your spoken command
-def processCommand(c):
-    if "open google" in c.lower():  # If you say "open google"
-        webbrowser.open("https://google.com")
+    result = get_weather(city)
 
-    elif "open facebook" in c.lower():
-        webbrowser.open("https://facebook.com")
+    speak(result)
 
-    elif "open youtube" in c.lower():
-        webbrowser.open("https://youtube.com")
+    return True
 
-    elif "open linkedin" in c.lower():
-        webbrowser.open("https://linkedin.com")
 
-    elif c.lower().startswith("play"):    # Example: "play despacito"
-        song = c.lower().split(" ")[1]    # Gets the second word (the song name)
-        link = musicLibrary.music[song]   # Finds the link from your music library
-        webbrowser.open(link)             # Opens that link in the browser to play
+# =========================
+# NEWS COMMAND
+# =========================
 
-    elif "news" in c.lower():        # If you say "news", it reads the top headlines
-        r = requests.get(f"https://newsapi.org/v2/top-headlines?country=us&apiKey={newsapi}")
-        if r.status_code == 200:
-            data = r.json()
-            articles = data.get('articles', [])
-            for article in articles:
-                speak(article['title'])  # Speaks the news headline
+def news_command(command):
+
+    news_keywords = [
+        "news",
+        "latest news",
+        "today's news",
+        "top news"
+    ]
+
+    if not any(
+        keyword in command
+        for keyword in news_keywords
+    ):
+
+        return False
+
+    print(
+        "Getting latest news..."
+    )
+
+    result = get_news()
+
+    speak(result)
+
+    return True
+
+
+# =========================
+# WEB SEARCH COMMAND
+# =========================
+
+def search_command(command):
+
+    search_triggers = [
+        "search for",
+        "search",
+        "google"
+    ]
+
+    for trigger in search_triggers:
+
+        if command.startswith(trigger):
+
+            query = command.replace(
+                trigger,
+                "",
+                1
+            ).strip()
+
+            if query:
+
+                print(
+                    f"Searching for: {query}"
+                )
+
+                web_search(query)
+
+                speak(
+                    f"Searching for {query}"
+                )
+
+            else:
+
+                speak(
+                    "What should I search for?"
+                )
+
+            return True
+
+    return False
+
+
+# =========================
+# WIKIPEDIA COMMAND
+# =========================
+
+def wiki_command(command):
+
+    triggers = [
+        "according to wikipedia",
+        "search wikipedia",
+        "wikipedia"
+    ]
+
+    for trigger in triggers:
+
+        if trigger in command:
+
+            query = command.replace(
+                trigger,
+                "",
+                1
+            ).strip()
+
+            if query:
+
+                print(
+                    f"Searching Wikipedia for: {query}"
+                )
+
+                result = wikipedia_search(
+                    query
+                )
+
+                speak(result)
+
+            else:
+
+                speak(
+                    "What should I search on Wikipedia?"
+                )
+
+            return True
+
+    return False
+
+
+# =========================
+# MUSIC COMMAND
+# =========================
+
+def music_command(command):
+
+    if not command.startswith("play"):
+
+        return False
+
+    song = command.replace(
+        "play",
+        "",
+        1
+    ).strip()
+
+    if not song:
+
+        speak(
+            "Which song should I play?"
+        )
+
+        return True
+
+    print(
+        f"Searching YouTube for: {song}"
+    )
+
+    success = play_music(song)
+
+    if success:
+
+        speak(
+            f"Searching YouTube for {song}"
+        )
 
     else:
-        output = aiProcess(c)   # For any other command → sends it to OpenAI (ChatGPT)
-        speak(output)           # Speaks out the response
 
-# This is where your main program starts
-if __name__ == "__main__":
-    speak("Jarvis is Starting....")
+        speak(
+            "I couldn't search for that song."
+        )
 
-    while True:  # Keeps running → always listening for the wake word “Jarvis”
+    return True
 
-        print("recognizing...")
+
+# =========================
+# COMMAND PROCESSING
+# =========================
+
+def process_command(command):
+
+    command = command.lower().strip()
+
+    if not command:
+
+        return
+
+
+    # =========================
+    # EXIT / SHUTDOWN
+    # =========================
+
+    exit_commands = [
+        "bye",
+        "goodbye",
+        "shutdown",
+        "shut down",
+        "exit",
+        "quit",
+        "stop",
+        "close jarvis",
+        "turn off"
+    ]
+
+    if any(
+        phrase in command
+        for phrase in exit_commands
+    ):
+
+        speak("Goodbye.")
+
+        raise SystemExit
+
+
+    # =========================
+    # SYSTEM COMMANDS
+    # =========================
+
+    if system_command(command):
+
+        return
+
+
+    # =========================
+    # WEBSITE COMMANDS
+    # =========================
+
+    if open_website(command):
+
+        return
+
+
+    # =========================
+    # WEATHER
+    # =========================
+
+    if weather_command(command):
+
+        return
+
+
+    # =========================
+    # NEWS
+    # =========================
+
+    if news_command(command):
+
+        return
+
+
+    # =========================
+    # WEB SEARCH
+    # =========================
+
+    if search_command(command):
+
+        return
+
+
+    # =========================
+    # WIKIPEDIA
+    # =========================
+
+    if wiki_command(command):
+
+        return
+
+
+    # =========================
+    # MUSIC
+    # =========================
+
+    if music_command(command):
+
+        return
+
+
+    # =========================
+    # AI FALLBACK
+    # =========================
+
+    print(
+        f"Sending to AI: {command}"
+    )
+
+    response = ask_ai(command)
+
+    if response:
+
+        speak(response)
+
+
+# =========================
+# MAIN JARVIS LOOP
+# =========================
+
+def main():
+
+    print(
+        "\n================================"
+    )
+
+    print(
+        "       JARVIS AI ASSISTANT"
+    )
+
+    print(
+        "================================\n"
+    )
+
+    speak(
+        "Jarvis is starting."
+    )
+
+
+    # =========================
+    # MICROPHONE CALIBRATION
+    # =========================
+
+    try:
+
+        with sr.Microphone() as source:
+
+            print(
+                "Calibrating microphone..."
+            )
+
+            recognizer.adjust_for_ambient_noise(
+                source,
+                duration=1
+            )
+
+            print(
+                "Microphone ready."
+            )
+
+    except Exception as e:
+
+        print(
+            f"Microphone Error: {e}"
+        )
+
+        speak(
+            "Microphone initialization failed."
+        )
+
+        return
+
+
+    speak(
+        "I am ready."
+    )
+
+
+    # =========================
+    # CONTINUOUS LOOP
+    # =========================
+
+    while True:
 
         try:
-            with sr.Microphone() as source:   # Start using your microphone
-                print("Listening...")
-                audio = recognizer.listen(source, timeout=3, phrase_time_limit=2)
 
-            word = recognizer.recognize_google(audio)  # Converts your speech to text
+            print(
+                "\nListening for 'Jarvis'..."
+            )
 
-            if word.lower() == "jarvis":      # If you say “Jarvis”
-                speak("Yes")                  # Jarvis replies “Yes”
+            with sr.Microphone() as source:
 
-                with sr.Microphone() as source:  # Listen again → this time for your full command
-                    print("Jarvis Active...")
-                    audio = recognizer.listen(source)
-                    command = recognizer.recognize_google(audio)
-                    processCommand(command)     # Send the command to be processed
+                audio = recognizer.listen(
+                    source,
+                    timeout=None,
+                    phrase_time_limit=5
+                )
 
-        except Exception as e:  # If something goes wrong (like not understanding), print the error
-            print("Error; {0}".format(e))
+            word = recognizer.recognize_google(
+                audio,
+                language="en-IN"
+            ).lower().strip()
 
+            print(
+                f"Heard: {word}"
+            )
+
+
+            # =========================
+            # WAKE WORD
+            # =========================
+
+            if "jarvis" in word:
+
+                command = word.replace(
+                    "jarvis",
+                    "",
+                    1
+                ).strip()
+
+                if command:
+
+                    process_command(
+                        command
+                    )
+
+                else:
+
+                    speak(
+                        "Yes?"
+                    )
+
+                    time.sleep(
+                        0.5
+                    )
+
+                    command = listen()
+
+                    if command:
+
+                        process_command(
+                            command
+                        )
+
+
+            else:
+
+                # =========================
+                # FALLBACK COMMANDS
+                # =========================
+
+                command_keywords = [
+                    "time",
+                    "date",
+                    "battery",
+                    "weather",
+                    "news",
+                    "search",
+                    "wikipedia",
+                    "play",
+
+                    # Open applications
+                    "open chrome",
+                    "open vs code",
+                    "open vscode",
+                    "open notepad",
+                    "open calculator",
+
+                    # Close applications
+                    "close chrome",
+                    "close vs code",
+                    "close vscode",
+                    "close notepad",
+                    "close calculator",
+                    "exit chrome",
+                    "exit vs code",
+                    "exit vscode",
+                    "exit notepad",
+                    "exit calculator",
+                    "quit chrome",
+                    "quit vs code",
+                    "quit vscode",
+                    "quit notepad",
+                    "quit calculator",
+
+                    # Lock computer
+                    "lock my computer",
+                    "lock computer",
+                    "lock my pc",
+                    "lock pc"
+                ]
+
+                if any(
+                    keyword in word
+                    for keyword in command_keywords
+                ):
+
+                    process_command(
+                        word
+                    )
+
+                else:
+
+                    speak(
+                        "Yes?"
+                    )
+
+                    time.sleep(
+                        0.5
+                    )
+
+                    command = listen()
+
+                    if command:
+
+                        process_command(
+                            command
+                        )
+
+
+        except sr.UnknownValueError:
+
+            continue
+
+        except sr.RequestError:
+
+            print(
+                "Speech recognition service unavailable."
+            )
+
+        except KeyboardInterrupt:
+
+            print(
+                "\nJarvis stopped."
+            )
+
+            speak(
+                "Goodbye."
+            )
+
+            break
+
+        except SystemExit:
+
+            break
+
+        except Exception as e:
+
+            print(
+                f"Unexpected Error: {e}"
+            )
+
+
+# =========================
+# PROGRAM START
+# =========================
+
+if __name__ == "__main__":
+
+    main()
